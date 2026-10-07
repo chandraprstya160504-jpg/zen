@@ -1,0 +1,110 @@
+-- 8-Bit Royal Crown - Visual Only
+-- Asset ID: 10159600649
+
+local Players = game:GetService("Players")
+local InsertService = game:GetService("InsertService")
+
+local Player = Players.LocalPlayer
+local CROWN_ID = 10159600649
+
+local Enabled = false
+local CurrentCharacter
+local CurrentCrown
+
+local function removeCrown()
+    if CurrentCrown then
+        CurrentCrown:Destroy()
+        CurrentCrown = nil
+    end
+
+    if CurrentCharacter then
+        local old = CurrentCharacter:FindFirstChild("8BitRoyalCrown")
+        if old then
+            old:Destroy()
+        end
+    end
+end
+
+local function addCrown()
+    if not Enabled then return end
+
+    local character = Player.Character
+    if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    removeCrown()
+
+    local success, result = pcall(function()
+        return InsertService:LoadAsset(CROWN_ID)
+    end)
+
+    if not success or not result then
+        warn("Gagal memuat asset crown:", result)
+        return
+    end
+
+    local accessory = result:FindFirstChildWhichIsA("Accessory", true)
+
+    if not accessory then
+        warn("Asset tersebut bukan Accessory yang dapat dipasang.")
+        result:Destroy()
+        return
+    end
+
+    accessory.Name = "8BitRoyalCrown"
+    accessory.Parent = character
+
+    humanoid:AddAccessory(accessory)
+
+    CurrentCharacter = character
+    CurrentCrown = accessory
+
+    result:Destroy()
+end
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "RoyalCrownGUI"
+gui.ResetOnSpawn = false
+gui.Parent = Player:WaitForChild("PlayerGui")
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 170, 0, 45)
+button.Position = UDim2.new(0.5, -85, 0.8, 0)
+button.BackgroundTransparency = 0.15
+button.TextColor3 = Color3.new(1, 1, 1)
+button.TextScaled = true
+button.Font = Enum.Font.GothamBold
+button.Text = "👑 Crown: OFF"
+button.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = button
+
+button.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+
+    if Enabled then
+        button.Text = "👑 Crown: ON"
+        addCrown()
+    else
+        button.Text = "👑 Crown: OFF"
+        removeCrown()
+    end
+end)
+
+Player.CharacterAdded:Connect(function(character)
+    CurrentCharacter = character
+
+    if Enabled then
+        task.wait(2)
+        addCrown()
+    end
+end)
+
+if Player.Character then
+    CurrentCharacter = Player.Character
+end
